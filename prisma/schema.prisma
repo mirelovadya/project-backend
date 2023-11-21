@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  userIndex     Int       @id @default(autoincrement())
+  firstName     String    @db.Text
+  lastName      String    @db.Text
+  email         String    @unique(map: "email_field_UNIQUE")
+  password      String    @db.Text
+  lastLoginDate DateTime? @db.DateTime(0)
+
+  orders  Orders[]
+  Payment Payment[]
+  address Address[]
+  credits Credit[]
+
+  @@map(name: "users")
+}
+
+model Address {
+  addressIndex   Int     @id @default(autoincrement())
+  city           String  @db.Text
+  country        String  @db.Text
+  street         String  @db.Text
+  houseNumber    String  @db.Text
+  zip            String? @db.Text
+  defaultAddress Boolean @default(false)
+
+  User      Users @relation(fields: [userIndex], references: [userIndex])
+  userIndex Int
+
+  @@map(name: "address")
+}
+
+model Products {
+  productIndex Int     @id @default(autoincrement())
+  name         String  @db.Text
+  barcode      String  @db.Text
+  price        Float
+  image        String? @db.LongText
+
+  Orders     Orders[]
+  orderIndex Int?
+
+  @@map(name: "products")
+}
+
+model Orders {
+  orderIndex Int       @id @default(autoincrement())
+  orderDate  DateTime? @db.DateTime(0)
+  price      Float
+
+  userIndex Int
+  user      Users @relation(fields: [userIndex], references: [userIndex])
+
+  products Products[]
+  //****
+  payment  Payment?
+
+  @@map(name: "orders")
+}
+
+model Payment {
+  paymentIndex Int @id @default(autoincrement())
+
+  orderIndex Int    @unique
+  order      Orders @relation(fields: [orderIndex], references: [orderIndex])
+
+  userIndex Int
+  user      Users @relation(fields: [userIndex], references: [userIndex])
+
+  //*******
+  creditIndex Int?
+  credit      Credit? @relation(fields: [creditIndex], references: [creditIndex])
+
+  @@map(name: "payment")
+}
+
+model Credit {
+  creditIndex   Int       @id @default(autoincrement())
+  creditNumber  String    @unique(map: "credit_namber_UNIQUE")
+  creditDate    DateTime  @db.DateTime(0)
+  creditCvv     Int
+  Payment       Payment[]
+  defaultCredit Boolean   @default(false)
+
+  Users     Users @relation(fields: [userIndex], references: [userIndex])
+  userIndex Int
+}
